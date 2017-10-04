@@ -5,12 +5,9 @@
 #########################################################################
 # Crear Usuarios y entorno para VM en Openstack. JSJ                    #
 #                                                                       #
-# Version 3.0 08/02/2017                                                #
-#          																#
-# Changelog:	1.0														#
-#				2.0														#
-#				3.0														#
-#																		#
+# Version 3.0 04/10/2017                                                #
+#          								#								#
+# 									#
 #                                                                       #
 #########################################################################
 
@@ -41,16 +38,31 @@ if [[ "$USUARIO" =~ $(echo ^\($(paste -sd'|' /root/lista_usuarios.txt)\)$) ]]; t
     echo "$USUARIO existe. Lo eliminamos..." >> $LOG
 
 FECHA=$(date +"%d%b%y") 
-INSTANCE_ID_BORRAR=$(nova list --all-tenants | grep $USUARIO | awk {'print $2'})
-openstack server delete $INSTANCE_ID_BORRAR
-echo_time "Instancia Eliminada "  >> $LOG
-# source /root/usuarios/$USUARIO'rc'
-ROUTER_ID_BORRAR=$(neutron router-list | grep $USUARIO | awk {'print $2'})
-neutron router-gateway-clear $ROUTER_ID_BORRAR &> /dev/null
-echo_time "Gateway Eliminado "  >> $LOG
-# PUERTOS=$(neutron port-list | grep ip_addr | awk {'print $2'} | wc -l)
-# neutron port-list | grep ip_addr | awk {'print $2'} > /root/usuarios/puertos_$USUARIO.txt
-neutron router-port-list $ROUTER_ID_BORRAR | grep subnet | awk {'print $8'} | sed 's/..$//' | sed 's/^.//' > /root/usuarios/subnet_$USUARIO.txt
+
+source /home/sistemas/usuarios/$USUARIO_openrc
+for %DELETE_INSTANCE_ID in (openstack server list | grep 'ACTIVE\|SHUTOFF\|ERROR'  |awk {'print $2'})
+do
+openstack server delete $DELETE_INSTANCE_ID
+echo_time "Instancia $DELETE_INSTANCE_ID Eliminada "  >> $LOG
+done
+
+for %DELETE_NETWORK_ID in (openstack network list | grep '[1234567890]' | awk {'print $2'})
+do
+openstack network delete $DELETE_NETWORK_ID
+echo_time "Red $DELETE_NETWORK_ID Eliminada "  >> $LOG
+done
+
+for %DELETE_PORT_ID in (openstack port list | grep 'ACTIVE\|BUILD\|DOWN' | awk {'print $2'})
+do
+openstack router port delete $DELETE_ROUTER_ID
+echo_time "Router Port $DELETE_ROUTER_ID Eliminado " >> $LOG
+done
+
+for %DELETE_ROUTER_ID in (openstack router list | grep 'ACTIVE\|SHUTOFF\|ERROR' | awk {'print $2'})
+do
+openstack router delete $DELETE_ROUTER_ID
+echo_time "Router $DELETE_ROUTER_ID Eliminado " >> $LOG
+done
 
 for line in `cat /root/usuarios/subnet_$USUARIO.txt`;do
   neutron router-interface-delete $ROUTER_ID_BORRAR $line &> /dev/null
@@ -178,7 +190,7 @@ ROL=$USUARIO
 echo -ne '( #                                        )  (05 %)\r'
 #read -p "Pulsa [Enter] para continuar..."
 
-source /root/openrc
+source /home/sistemas/admin_openrc
 PROYECTO=$USUARIO'_proyecto'
 
 if [ $SALTAR = 0 ];
