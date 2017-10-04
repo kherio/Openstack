@@ -40,6 +40,7 @@ if [[ "$USUARIO" =~ $(echo ^\($(paste -sd'|' /root/lista_usuarios.txt)\)$) ]]; t
 FECHA=$(date +"%d%b%y") 
 
 source /home/sistemas/usuarios/$USUARIO_openrc
+
 for %DELETE_INSTANCE_ID in (openstack server list | grep 'ACTIVE\|SHUTOFF\|ERROR'  |awk {'print $2'})
 do
 openstack server delete $DELETE_INSTANCE_ID
@@ -64,20 +65,9 @@ openstack router delete $DELETE_ROUTER_ID
 echo_time "Router $DELETE_ROUTER_ID Eliminado " >> $LOG
 done
 
-for line in `cat /root/usuarios/subnet_$USUARIO.txt`;do
-  neutron router-interface-delete $ROUTER_ID_BORRAR $line &> /dev/null
-done
-echo_time "Interfaces eliminadas "  >> $LOG
-neutron router-delete $ROUTER_ID_BORRAR &> /dev/null
-echo_time "Router Eliminado "  >> $LOG
-SUBNET_ID_BORRAR=$(neutron subnet-list |grep $USUARIO | awk {'print $2'})
-neutron subnet-delete $SUBNET_ID_BORRAR &> /dev/null
-echo_time "Subnet Eliminada "  >> $LOG
-NETWORK_ID_BORRAR=$(neutron net-list | grep $USUARIO | awk {'print $2'})
-neutron net-delete $NETWORK_ID_BORRAR &> /dev/null
-echo_time "Red Eliminada "  >> $LOG
 
-source /root/openrc
+source /home/usuarios/admin_openrc
+
 openstack project delete $USUARIO'_proyecto'
 echo_time "Proyecto Elimiando "  >> $LOG
 openstack user delete $USUARIO
@@ -85,11 +75,10 @@ echo_time "Usuario Elimiando "  >> $LOG
 openstack role delete $USUARIO
 echo_time "Rol Eliminado "  >> $LOG
 echo_time " Usuario: "$USUARIO" BORRADO" >> $LOG
-mv /root/usuarios/$USUARIO"*" /root/usuarios/eliminados  &> /dev/null
-rm /root/usuarios/puertos_$USUARIO.txt  &> /dev/null
-rm /root/usuarios/subnet_$USUARIO.txt  &> /dev/null
+mv /home/sistemas/usuarios/$USUARIO"*" /home/sistemas/usuarios/eliminados  &> /dev/null
+
 rm /root/lista_usuarios.txt  &> /dev/null
-rm /root/lista_proyectos.txt  &> /dev/null
+
 else
     echo "$USUARIO NO es un usuario valido. Abortamos el proceso..." >> $LOG
 fi
@@ -97,20 +86,6 @@ fi
 exit 1
 }
 
-echo " " 
-# function jumpto
-# {
-#    label=$1
-#    cmd=$(sed -n "/$label:/{:a;n;p;ba};" $0 | grep -v ':$')
-#    eval "$cmd"
-#    exit
-# }
-# echo $start
-# start=${1:-"start"}
-
-# jumpto $start
-
-# start:
 
 while getopts D:u:p:s:t:n:wh option
 do
@@ -229,25 +204,25 @@ echo -ne '( #####                                    )  (14 %)\r'
   echo_time " " >> $LOG
   echo_time "Creamos el fichero de credenciales para el usuario..." >> $LOG
   touch /root/usuarios/$USUARIO'rc'
-  echo "export OS_NO_CACHE='true'" > /root/usuarios/$USUARIO'rc'
-  echo "export OS_TENANT_NAME=$PROYECTO"  >> /root/usuarios/$USUARIO'rc'
-  echo "export OS_PROJECT_NAME=$PROYECTO" >> /root/usuarios/$USUARIO'rc'
-  echo "export OS_USERNAME=$USUARIO"  >> /root/usuarios/$USUARIO'rc'
-  echo "export OS_PASSWORD=$PASSWORD" >> /root/usuarios/$USUARIO'rc'
-  echo "export OS_AUTH_URL='http://controller:5000/'" >> /root/usuarios/$USUARIO'rc'
-  echo "export OS_DEFAULT_DOMAIN='Default'" >> /root/usuarios/$USUARIO'rc'
-  echo "export OS_AUTH_STRATEGY='keystone'" >> /root/usuarios/$USUARIO'rc'
-  echo "export OS_REGION_NAME='RegionOne'"  >> /root/usuarios/$USUARIO'rc'
-  echo "export CINDER_ENDPOINT_TYPE='internalURL'"  >> /root/usuarios/$USUARIO'rc'
-  echo "export GLANCE_ENDPOINT_TYPE='internalURL'" >> /root/usuarios/$USUARIO'rc'
-  echo "export KEYSTONE_ENDPOINT_TYPE='internalURL'" >> /root/usuarios/$USUARIO'rc'
-  echo "export NOVA_ENDPOINT_TYPE='internalURL'" >> /root/usuarios/$USUARIO'rc'
-  echo "export NEUTRON_ENDPOINT_TYPE='internalURL'" >> /root/usuarios/$USUARIO'rc'
-  echo "export OS_ENDPOINT_TYPE='internalURL'" >> /root/usuarios/$USUARIO'rc'
+  echo "export OS_NO_CACHE='true'" > /home/sistemas/usuarios/$USUARIO'rc'
+  echo "export OS_TENANT_NAME=$PROYECTO"  >> /home/sistemas/usuarios/$USUARIO'rc'
+  echo "export OS_PROJECT_NAME=$PROYECTO" >> /home/sistemas/usuarios/$USUARIO'rc'
+  echo "export OS_USERNAME=$USUARIO"  >> /home/sistemas/usuarios/$USUARIO'rc'
+  echo "export OS_PASSWORD=$PASSWORD" >> /home/sistemas/usuarios/$USUARIO'rc'
+  echo "export OS_AUTH_URL='http://controller:5000/'" >> /home/sistemas/usuarios/$USUARIO'rc'
+  echo "export OS_DEFAULT_DOMAIN='Default'" >> /home/sistemas/usuarios/$USUARIO'rc'
+  echo "export OS_AUTH_STRATEGY='keystone'" >> /home/sistemas/usuarios/$USUARIO'rc'
+  echo "export OS_REGION_NAME='RegionOne'"  >> /home/sistemas/usuarios/$USUARIO'rc'
+  echo "export CINDER_ENDPOINT_TYPE='internalURL'"  >> /home/sistemas/usuarios/$USUARIO'rc'
+  echo "export GLANCE_ENDPOINT_TYPE='internalURL'" >> /home/sistemas/usuarios/$USUARIO'rc'
+  echo "export KEYSTONE_ENDPOINT_TYPE='internalURL'" >> /home/sistemas/usuarios/$USUARIO'rc'
+  echo "export NOVA_ENDPOINT_TYPE='internalURL'" >> /home/sistemas/usuarios/$USUARIO'rc'
+  echo "export NEUTRON_ENDPOINT_TYPE='internalURL'" >> /home/sistemas/usuarios/$USUARIO'rc'
+  echo "export OS_ENDPOINT_TYPE='internalURL'" >> /home/sistemas/usuarios/$USUARIO'rc'
 echo -ne '( ####                                     )  (18 %)\r'
 
   # exportamos las variables del nuevo usuario
-  source /root/usuarios/$USUARIO'rc'
+  source /home/sistemas/usuarios/$USUARIO'rc'
   echo_time " " >> $LOG
 
   # Creamos la RED y SUBRED del nuevo usuario
@@ -283,7 +258,7 @@ echo -ne '( ######                                   )  (28 %)\r'
   # Buscamos la IP Publica del router
   #
   #
-  source /root/usuarios/$USUARIO'rc'
+  source /home/sistemas/usuarios/$USUARIO'rc'
   ROUTER_IP=$(neutron router-show $ROUTER_ID | grep ip_address | awk '{print $12}' | cut -c 2- | sed 's/....$//')
   # ROUTER_IP=$(neutron router-show $ROUTER_ID )
 
