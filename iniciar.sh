@@ -227,20 +227,20 @@ echo -ne '( ####                                     )  (18 %)\r'
 
   # Creamos la RED y SUBRED del nuevo usuario
   echo_time "Creamos la red: RED_"$USUARIO >> $LOG
-  neutron net-create RED_$USUARIO &> /dev/null
-  NET_ID=$(neutron net-list | grep RED_$USUARIO | awk '{print $2}')
+  openstack network create RED_$USUARIO &> /dev/null
+  NET_ID=$(openstack network list | grep RED_$USUARIO | awk '{print $2}')
 echo -ne '( ####                                     )  (20 %)\r'  
   echo_time "Direccionamiento: 10.1.1.0/24" >> $LOG
   echo_time "DNS Público: 8.8.8.8" >> $LOG
   echo_time " " >> $LOG
-
-  neutron subnet-create RED_$USUARIO 10.1.1.0/24 --name SUBRED_$USUARIO --dns-nameservers list=true 8.8.8.8 &> /dev/null
-  SUBNET_ID=$(neutron subnet-list | grep SUBRED_$USUARIO | awk '{print $2}')
+  openstack subnet create SUBRED_jsanjose --network RED_jsanjose --subnet-range 10.0.0.0/24 --dns-nameserver 8.8.8.8 &> /dev/null
+  SUBNET_ID=$(openstack subnet list | grep SUBRED_$USUARIO | awk '{print $2}')
 echo -ne '( #####                                    )  (22 %)\r'
   # Creamos el ROUTER del nuevo usuario
   echo_time "Creamos router: ROUTER_"$USUARIO >> $LOG
-  neutron router-create ROUTER_$USUARIO &> /dev/null
-  ROUTER_ID=$(neutron router-list |grep ROUTER_$USUARIO |awk '{print $2}')
+  openstack router create ROUTER_$USUARIO &> /dev/null
+  
+  ROUTER_ID=$(openstack router list |grep ROUTER_$USUARIO |awk '{print $2}')
   QROUTER='qrouter-'$ROUTER_ID
 echo -ne '( ######                                   )  (24 %)\r'
   echo_time " " >> $LOG
@@ -249,8 +249,9 @@ echo -ne '( ######                                   )  (24 %)\r'
   # Conectamos el router a la red publica y a la interna
   echo_time " " >> $LOG
   echo_time "Creamos Gateway y conectamos a la red Publica." >> $LOG
-  neutron router-gateway-set ROUTER_$USUARIO admin_floating_net &> /dev/null
-  neutron router-interface-add ROUTER_$USUARIO SUBRED_$USUARIO &> /dev/null
+  openstack router set ROUTER_$USUARIO --external-gateway provider &> /dev/null
+  openstack router add subnet ROUTER_$USUARIO SUBNET_$USUARIO &> /dev/null
+  
   echo_time " " >> $LOG
 echo -ne '( ######                                   )  (28 %)\r'
 
@@ -259,9 +260,8 @@ echo -ne '( ######                                   )  (28 %)\r'
   #
   #
   source /home/sistemas/usuarios/$USUARIO'rc'
-  ROUTER_IP=$(neutron router-show $ROUTER_ID | grep ip_address | awk '{print $12}' | cut -c 2- | sed 's/....$//')
-  # ROUTER_IP=$(neutron router-show $ROUTER_ID )
-
+  ROUTER_IP=$(openstack router show ROUTER_$USUARIO | grep ip_address | awk '{print $12}' | cut -c 2- | sed 's/....$//')
+  
   echo_time " " >> $LOG
   echo_time "IP Publica del router : " $ROUTER_IP >> $LOG
   echo_time " " >> $LOG
@@ -270,7 +270,7 @@ echo -ne '( ######                                   )  (28 %)\r'
 
 
   # Modificamos el grupo de seguridad por defecto para el nuevo usuario. Hay que hacerlo como Admin
-  source /root/openrc
+  source /home/sistemas/admin_openrc
   SECGROUP_ID=$(openstack security group list | grep $PROJECTID | grep default | awk '{print $2}')
 echo -ne '( #####                                    )  (30 %)\r'
   echo_time "Añadimos RDP y SSH a las reglas por defecto del usuario:" >> $LOG
