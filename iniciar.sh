@@ -25,16 +25,16 @@ usage() { printf "Usage: $0 \n\n       [-u <usuario> ]\n       [-p <password> ]\
 
 borrar()
 {
-touch /root/usuarios/$USUARIO'_LOG'
-LOG=/root/usuarios/$USUARIO'_LOG'
+touch /home/sistemas/usuarios/$USUARIO'_LOG'
+LOG=/home/sistemas/usuarios/$USUARIO'_LOG'
 
 echo_time " " >> $LOG
 echo "Prueba para comprobar usuario y si existe, eliminarlo...!" >> $LOG
-source /root/openrc
+source /home/sistemas/admin_openrc
   # Comprobamos que no existe ya el usuario
-  openstack user list | awk '{print $4}' > /root/lista_usuarios.txt
+  openstack user list | awk '{print $4}' > /home/sistemas/lista_usuarios.txt
 
-if [[ "$USUARIO" =~ $(echo ^\($(paste -sd'|' /root/lista_usuarios.txt)\)$) ]]; then
+if [[ "$USUARIO" =~ $(echo ^\($(paste -sd'|' /home/sistemas/lista_usuarios.txt)\)$) ]]; then
     echo "$USUARIO existe. Lo eliminamos..." >> $LOG
 
 FECHA=$(date +"%d%b%y") 
@@ -77,7 +77,7 @@ echo_time "Rol Eliminado "  >> $LOG
 echo_time " Usuario: "$USUARIO" BORRADO" >> $LOG
 mv /home/sistemas/usuarios/$USUARIO"*" /home/sistemas/usuarios/eliminados  &> /dev/null
 
-rm /root/lista_usuarios.txt  &> /dev/null
+rm /home/sistemas/lista_usuarios.txt  &> /dev/null
 
 else
     echo "$USUARIO NO es un usuario valido. Abortamos el proceso..." >> $LOG
@@ -116,8 +116,8 @@ fi
 
 # Comenzamos logueo
 
-touch /root/usuarios/$USUARIO'_LOG'
-LOG=/root/usuarios/$USUARIO'_LOG'
+touch /home/sistemas/usuarios/$USUARIO'_LOG'
+LOG=/home/sistemas/usuarios/$USUARIO'_LOG'
 
 
 if [[ -z $USUARIO ]] || [[ -z $PASSWORD ]] || [[ -z $SISTEMA ]] || [[ -z $TIPO ]] || [[ -z $INSTANCIA ]]
