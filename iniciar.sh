@@ -227,7 +227,7 @@ echo -ne '( ####                                     )  (20 %)\r'
   echo_time "Direccionamiento: 10.1.1.0/24" >> $LOG
   echo_time "DNS Público: 8.8.8.8" >> $LOG
   echo_time " " >> $LOG
-  openstack subnet create SUBRED_jsanjose --network RED_jsanjose --subnet-range 10.0.0.0/24 --dns-nameserver 8.8.8.8 &> /dev/null
+  openstack subnet create SUBRED_$USUARIO --network RED_$USUARIO --subnet-range 10.0.0.0/24 --dns-nameserver 8.8.8.8 &> /dev/null
   SUBNET_ID=$(openstack subnet list | grep SUBRED_$USUARIO | awk '{print $2}')
 echo -ne '( #####                                    )  (22 %)\r'
   # Creamos el ROUTER del nuevo usuario
