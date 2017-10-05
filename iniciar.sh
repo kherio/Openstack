@@ -412,7 +412,7 @@ echo -ne '(                OK                        )  (100 %)\r'
   elif [ $SISTEMA == "Ubuntu" ] || [ $SISTEMA == "ubuntu" ];
   then
     source /home/sistemas/admin_openrc
-    SISTEMA_ID=$(openstack image list | grep "Ubuntu_16" | awk '{print $2}')
+    IMAGE_ID=$(openstack image list | grep "Ubuntu 16" | awk '{print $2}')
     echo_time "Generando Sistema: Ubuntu Server 16.04 x64" >> $LOG
 
     source /home/sistemas/usuarios/$USUARIO'rc'
