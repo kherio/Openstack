@@ -39,7 +39,7 @@ if [[ "$USUARIO" =~ $(echo ^\($(paste -sd'|' /home/sistemas/lista_usuarios.txt)\
 
 FECHA=$(date +"%d%b%y") 
 
-source /home/sistemas/usuarios/$USUARIO_openrc
+source /home/sistemas/usuarios/$USUARIO'rc'
 
 for %DELETE_INSTANCE_ID in $(openstack server list | grep 'ACTIVE\|SHUTOFF\|ERROR'  |awk {'print $2'})
 do
