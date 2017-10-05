@@ -360,7 +360,7 @@ echo -ne '( ###########################              )  (52 %)\r'
     #--------
 
     # ROUTER_IFACE=$(ip netns exec $QROUTER ip a |grep qg- | awk '{print $2}' | sed 's/.$//')
-    ROUTER_IFACE=$(ip netns exec $QROUTER ip a |grep qg- | grep -v "scope global" | awk '{print $2}' | sed 's/.$//')
+    ROUTER_IFACE=$(ip netns exec $QROUTER ip a | grep qg- | grep -v "scope global" | awk {'print $2'} | sed 's/.$//' | egrep -o '^[^@]+')
 echo -ne '( ############################             )  (58 %)\r'
     #
     #-------
@@ -368,7 +368,7 @@ echo -ne '( ############################             )  (58 %)\r'
     #-------
 
     #source /home/sistemas/admin_openrc
-    VMIP=$(openstack server show $INSTANCE_ID | grep RED_$USUARIO | awk {'print $4'} | sed 's/^.*=//')
+    VM_IP=$(openstack server show $INSTANCE_ID | grep RED_$USUARIO | awk {'print $4'} | sed 's/^.*=//')
     LAST_OCTET=$(echo $ROUTER_IP | cut -d"." -f4)
 echo -ne '( ################################         )  (64 %)\r'
     #
@@ -402,8 +402,9 @@ echo -ne '( ###################################      )  (75 %)\r'
 echo -ne '( ######################################## )  (95 %)\r'
 
     echo_time " " >> $LOG
-    echo_time " Reglas Iptables creadas en el Router " >> $LOG
+    echo_time " Inyectamos regla Iptables en el Router para el puerto 3389/TCP" >> $LOG
     echo_time "--------------------------------------" >> $LOG
+    ip netns exec $QROUTER iptables -t nat -I PREROUTING -i $ROUTER_IFACE -p tcp --dport 3389 -j DNAT --to-destination $VM_IP
 echo -ne '(                OK                        )  (100 %)\r'
 #
 # CREAMOS MAQUINA UBUNTU
@@ -428,7 +429,7 @@ openstack server create --flavor $FLAVOR_ID --image $IMAGE_ID --nic net-id=$NET_
     sleep 10
 
 #  Sacamos el interfaz del router desde el nodo que lo gestiona
-    ROUTER_IFACE=$(ip netns exec $QROUTER ip a |grep qg- | grep -v "scope global" | awk '{print $2}' | sed 's/.$//')
+    ROUTER_IFACE=$(ip netns exec $QROUTER ip a | grep qg- | grep -v "scope global" | awk {'print $2'} | sed 's/.$//' | egrep -o '^[^@]+')
 
 #  Sacamos la IP de la máquina virtual recien creada
     #source /home/sistemas/admin_openrc
@@ -491,7 +492,7 @@ INSTANCE_ID=$(openstack server list | grep $INSTANCIA | awk '{print $2}')
     sleep 10
 
 #  Sacamos el interfaz del router desde el nodo que lo gestiona
-    ROUTER_IFACE=$(ip netns exec $QROUTER ip a |grep qg- | grep -v "scope global" | awk '{print $2}' | sed 's/.$//')
+    ROUTER_IFACE=$(ip netns exec $QROUTER ip a | grep qg- | grep -v "scope global" | awk {'print $2'} | sed 's/.$//' | egrep -o '^[^@]+')
    
 #  Sacamos la IP de la máquina virtual recien creada
     source /home/sistemas/admin_openrc
