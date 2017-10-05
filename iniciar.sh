@@ -305,17 +305,17 @@ else
   echo_time "ROL: "$ROL >> $LOG
   echo_time "RED: " 'RED_'$USUARIO >> $LOG 
   echo_time "SUBRED: " 'SUBRED_'$USUARIO >> $LOG
-  source /root/usuarios/$USUARIO'rc'
-  NET_ID=$(neutron net-list | grep RED_$USUARIO | awk '{print $2}')
+  source /home/sistemas/usuarios/$USUARIO'rc'
+  NET_ID=$(openstack network list | grep RED_$USUARIO | awk '{print $2}')
   echo_time "NET_ID: " $NET_ID >> $LOG
-  SUBNET_ID=$(neutron subnet-list | grep SUBRED_$USUARIO | awk '{print $2}')
+  SUBNET_ID=$(openstack subnet list | grep SUBNET_$USUARIO | awk '{print $2}')
   echo_time "SUBNET_ID: " $SUBNET_ID >> $LOG
-  ROUTER_ID=$(neutron router-list |grep ROUTER_$USUARIO |awk '{print $2}')
+  ROUTER_ID=$(openstack router list |grep ROUTER_$USUARIO |awk '{print $2}')
   echo_time "ROUTER_ID: " $ROUTER_ID >> $LOG
   QROUTER='qrouter-'$ROUTER_ID
   echo_time "QROUTER_ID: " $QROUTER >> $LOG
-  source /root/usuarios/$USUARIO'rc'
-  ROUTER_IP=$(neutron router-show $ROUTER_ID | grep ip_address | awk '{print $12}' | cut -c 2- | sed 's/....$//')
+  source /home/sistemas/usuarios/$USUARIO'rc'
+  ROUTER_IP=$(openstack router show $ROUTER_ID | grep ip_address | awk '{print $12}' | cut -c 2- | sed 's/....$//')
   echo_time "ROUTER IP: "$ROUTER_IP >> $LOG
   read -p "Pulsa  [Enter] para continuar: " userInput
 fi
@@ -335,7 +335,7 @@ echo_time " " >> $LOG
 # read -p "Usuario que va crear la instancia...: " USUARIO
 # INSTANCE_NAME=$INSTANCIA
 
-TIPOID=$(openstack flavor list | grep $TIPO | awk '{print $2}')
+# FLAVOR_ID=$(openstack flavor list | grep $TIPO | awk '{print $2}')
 
 #
 # CREACION DE MAQUINA WINDOWS
@@ -343,25 +343,25 @@ TIPOID=$(openstack flavor list | grep $TIPO | awk '{print $2}')
 
 if [ $SISTEMA == "Windows" ] || [ $SISTEMA = "windows" ];
   then
-    source /root/openrc
-    SISTEMA_ID=$(openstack image list | grep Windows | awk '{print $2}')
+    source /home/sistemas/admin_openrc
+    IMAGE_ID=$(openstack image list | grep Windows | awk '{print $2}')
     echo_time "Generando Sistema: Windows Server 2012 R2"  >> $LOG
-    TIPOID=$(openstack flavor list | grep $TIPO | awk '{print $2}')
-    source /root/usuarios/$USUARIO'rc'
+    FLAVOR_ID=$(openstack flavor list | grep $TIPO | awk '{print $2}')
+    source /home/sistemas/usuarios/$USUARIO'rc'
 echo -ne '( #############                            )  (45 %)\r'
-    nova boot --image $SISTEMA_ID --flavor $TIPOID $INSTANCIA &> /dev/null
+openstack server create --flavor $FLAVOR_ID --image $IMAGE_ID --nic net-id=$NET_ID --security-group default $INSTANCIA &> /dev/null
+ 
 echo -ne '( ###############                          )  (48 %)\r'
 #   FLOATING_IP=$(nova floating-ip-create | awk '{print $4}' | sed -e '1,3d' | head -n -1)
-    INSTANCE_ID=$(nova list | grep $INSTANCIA | awk '{print $2}')
+    INSTANCE_ID=$(openstack server list | grep $INSTANCIA | awk '{print $2}')
 #   nova floating-ip-associate $INSTANCE_ID $FLOATING_IP &> /dev/null
     echo_time "Máquina : " $INSTANCIA ", CREADA...!" >> $LOG
     echo_time " " >> $LOG
 
 # -------
-#  Esperamos 10 segundos para que nos asigne el DHCP la IP privada
-    #--------
+
 echo -ne '( #########################                )  (50 %)\r'
-    sleep 10
+    sleep 2
 echo -ne '( ###########################              )  (52 %)\r'
     #
     #--------
@@ -376,8 +376,8 @@ echo -ne '( #########################                )  (53 %)\r'
     #  Sacamos la IP de la máquina virtual recien creada 
     #-------
 
-    source /root/openrc
-    VMIP=$(nova show $INSTANCE_ID | grep RED_$USUARIO | awk '{print $5}')
+    #source /root/openrc
+    VMIP=$(openstack server show $INSTANCE_ID | grep RED_$USUARIO | awk {'print $4'} | sed 's/^.*=//')
     LAST_OCTET=$(echo $ROUTER_IP | cut -d"." -f4)
 echo -ne '( ###########################              )  (54 %)\r'
     #
