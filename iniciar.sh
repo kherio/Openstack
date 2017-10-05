@@ -123,7 +123,7 @@ fi
 echo -ne '( #                                        )  (01 %)\r'
 
 # Comprobamos SISTEMA
-if [ $SISTEMA != "Windows" ] && [ $SISTEMA != "Ubuntu" ] && [ $SISTEMA != "Centos" ] 
+if [ $SISTEMA != "Windows" ] && [ $SISTEMA != "Ubuntu" ] && [ $SISTEMA != "Centos" ] && [ $SISTEMA != "windows" ] && [ $SISTEMA != "ubuntu" ] && [ $SISTEMA != "centos" ] 
 then
 echo "Opciones disponibles:  [Windows] o [Ubuntu] [Centos]"
 echo "                        *           *        *"
