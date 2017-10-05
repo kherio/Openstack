@@ -472,17 +472,18 @@ echo_time " " >> $LOG
 # CREAMOS MAQUINA CENTOS
 # ======================
 
-  elif [ $SISTEMA == "Centos" ] || [ $SISTEMA == "Centos" ];
+  elif [ $SISTEMA == "Centos" ] || [ $SISTEMA == "centos" ];
   then
     source /home/sistemas/admin_openrc
-    SISTEMA_ID=$(openstack image list | grep "CentOS_7" | awk '{print $2}')
+    IMAGE_ID=$(openstack image list | grep "CentOS7" | awk '{print $2}')
     echo_time "Generando Sistema: Ubuntu Server 16.04 x64" >> $LOG
-    # TIPOID=$(openstack flavor list | grep $TIPO | awk '{print $2}')
+    FLAVOR_ID=$(openstack flavor list | grep $TIPO | awk '{print $2}')
     source /home/sistemas/usuarios/$USUARIO'rc'
     nova keypair-add $USUARIO'_centos_key' >> /home/sistemas/usuarios/$USUARIO'_centos_key_'$FECHA'.pem'
     chmod 600 /home/sistemas/usuarios/$USUARIO'_centos_key_'$FECHA'.pem'
-    openstack server create --flavor $TIPOID --image $SISTEMA_ID --key-name $USUARIO'_centos_key' $INSTANCIA &> /dev/null
-    INSTANCE_ID=$(nova list | grep $INSTANCIA | awk '{print $2}')
+    #openstack server create --flavor $TIPOID --image $SISTEMA_ID --key-name $USUARIO'_centos_key' $INSTANCIA &> /dev/null
+openstack server create --flavor $FLAVOR_ID --image $IMAGE_ID --nic net-id=$NET_ID --security-group default --key-name $USUARIO'_ubuntu_key' $INSTANCIA >> $LOG
+INSTANCE_ID=$(openstack server list | grep $INSTANCIA | awk '{print $2}')
     echo_time "Máquina " $INSTANCIA " creada..!" >> $LOG
     echo_time " " >> $LOG
 
@@ -491,10 +492,10 @@ echo_time " " >> $LOG
 
 #  Sacamos el interfaz del router desde el nodo que lo gestiona
     ROUTER_IFACE=$(ip netns exec $QROUTER ip a |grep qg- | grep -v "scope global" | awk '{print $2}' | sed 's/.$//')
-
+   
 #  Sacamos la IP de la máquina virtual recien creada
     source /home/sistemas/admin_openrc
-    VMIP=$(nova show $INSTANCE_ID | grep RED_$USUARIO | awk '{print $5}')
+    VMIP=$(openstack server show $INSTANCE_ID | grep RED_$USUARIO | awk {'print $4'} | sed 's/^.*=//')
     LAST_OCTET=$(echo $ROUTER_IP | cut -d"." -f4)
 
 #  Ejecutamos las reglas en los routers
@@ -524,8 +525,8 @@ echo_time "====================================" >> $LOG
 
 # Creamos las reglas para permitir al puerto 22
 
-ssh node-1 "ip netns exec $QROUTER iptables -t nat -I PREROUTING -i $ROUTER_IFACE -p tcp --dport 22 -j DNAT --to-destination $VM_IP" &> /dev/null  
-ssh node-2 "ip netns exec $QROUTER iptables -t nat -I PREROUTING -i $ROUTER_IFACE -p tcp --dport 22 -j DNAT --to-destination $VM_IP" &> /dev/null
+#ssh node-1 "ip netns exec $QROUTER iptables -t nat -I PREROUTING -i $ROUTER_IFACE -p tcp --dport 22 -j DNAT --to-destination $VM_IP" &> /dev/null  
+#ssh node-2 "ip netns exec $QROUTER iptables -t nat -I PREROUTING -i $ROUTER_IFACE -p tcp --dport 22 -j DNAT --to-destination $VM_IP" &> /dev/null
 
 echo_time " " >> $LOG
 echo_time " Reglas Iptables creadas en el Router " >> $LOG
