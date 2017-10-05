@@ -166,7 +166,7 @@ echo -ne '( #                                        )  (05 %)\r'
 #read -p "Pulsa [Enter] para continuar..."
 
 source /home/sistemas/admin_openrc
-PROYECTO=$USUARIO'_proyecto'
+PROYECTO=$USUARIO
 
 if [ $SALTAR = 0 ];
   then 
