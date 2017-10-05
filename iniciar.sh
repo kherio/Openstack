@@ -414,12 +414,12 @@ echo -ne '(                OK                        )  (100 %)\r'
     source /home/sistemas/admin_openrc
     IMAGE_ID=$(openstack image list | grep "Ubuntu 16" | awk '{print $2}')
     echo_time "Generando Sistema: Ubuntu Server 16.04 x64" >> $LOG
-
+    FLAVOR_ID=$(openstack flavor list | grep $TIPO | awk '{print $2}')
     source /home/sistemas/usuarios/$USUARIO'rc'
     nova keypair-add $USUARIO'_ubuntu_key' >> /home/sistemas/usuarios/$USUARIO'_ubuntu_key_'$FECHA'.pem'
     chmod 600 /home/sistemas/usuarios/$USUARIO'_ubuntu_key_'$FECHA'.pem'
-    openstack server create --flavor $FLAVOR_ID --image $IMAGE_ID --nic net-id=$NET_ID --security-group default --key-name $USUARIO'_ubuntu_key' $INSTANCIA &> /dev/null
-
+    #openstack server create --flavor $FLAVOR_ID --image $IMAGE_ID --nic net-id=$NET_ID --security-group default --key-name $USUARIO'_ubuntu_key' $INSTANCIA &> /dev/null
+openstack server create --flavor $FLAVOR_ID --image $IMAGE_ID --nic net-id=$NET_ID --security-group default --key-name $USUARIO'_ubuntu_key' $INSTANCIA
     INSTANCE_ID=$(openstack server list | grep $INSTANCIA | awk '{print $2}')
     echo_time "Máquina " $INSTANCIA " creada..!" >> $LOG
     echo_time " " >> $LOG
