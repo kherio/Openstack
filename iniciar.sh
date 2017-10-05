@@ -173,11 +173,11 @@ if [ $SALTAR = 0 ];
 
   # Comprobamos que no existe ya el usuario
   openstack user list | awk '{print $4}' > lista_usuarios.txt
-  grep -q $USUARIO '/root/lista_usuarios.txt' && echo " " && echo "Usuario: "$USUARIO" YA EXISTE !!!" && echo " " && echo "CAMBIA DE USUARIO...!" && echo " " && rm /root/lista_usuarios.txt && exit 0
+  grep -q $USUARIO '/home/sistemas/lista_usuarios.txt' && echo " " && echo "Usuario: "$USUARIO" YA EXISTE !!!" && echo " " && echo "CAMBIA DE USUARIO...!" && echo " " && rm /root/lista_usuarios.txt && exit 0
 echo -ne '( #                                        )  (06 %)\r'
   # Comprobamos que no existe ya el proyecto
   openstack project list | awk '{print $4}' > lista_proyectos.txt
-  grep -q $PROYECTO '/root/lista_proyectos.txt' && echo " " && echo "Proyecto: "$PROYECTO" YA EXISTE !!!" && echo " " && echo "CAMBIA DE NOMBRE DE PROYECTO...!" && echo " " && rm /root/lista_proyectos.txt && exit 0
+  grep -q $PROYECTO '/home/sistemas/lista_proyectos.txt' && echo " " && echo "Proyecto: "$PROYECTO" YA EXISTE !!!" && echo " " && echo "CAMBIA DE NOMBRE DE PROYECTO...!" && echo " " && rm /root/lista_proyectos.txt && exit 0
 echo -ne '( ##                                       )  (07 %)\r'
   # Creamos Proyecto
   openstack project create --description $PROYECTO $PROYECTO &> /dev/null
@@ -203,7 +203,7 @@ echo -ne '( #####                                    )  (14 %)\r'
   #Generamos el fichero de credenciales del nuevo usuario
   echo_time " " >> $LOG
   echo_time "Creamos el fichero de credenciales para el usuario..." >> $LOG
-  touch /root/usuarios/$USUARIO'rc'
+  touch /home/sistemas/usuarios/$USUARIO'rc'
   echo "export OS_NO_CACHE='true'" > /home/sistemas/usuarios/$USUARIO'rc'
   echo "export OS_TENANT_NAME=$PROYECTO"  >> /home/sistemas/usuarios/$USUARIO'rc'
   echo "export OS_PROJECT_NAME=$PROYECTO" >> /home/sistemas/usuarios/$USUARIO'rc'
