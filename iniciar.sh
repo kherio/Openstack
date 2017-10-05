@@ -5,7 +5,7 @@
 #########################################################################
 # Crear Usuarios y entorno para VM en Openstack. JSJ                    #
 #                                                                       #
-# Version 3.0 04/10/2017                                                #
+# Version 3.0 05/10/2017                                                #
 #          								#								#
 # 									#
 #                                                                       #
@@ -35,42 +35,37 @@ source /home/sistemas/admin_openrc
   openstack user list | awk '{print $4}' > /home/sistemas/lista_usuarios.txt
 
 if [[ "$USUARIO" =~ $(echo ^\($(paste -sd'|' /home/sistemas/lista_usuarios.txt)\)$) ]]; then
-    echo "$USUARIO existe. Lo eliminamos..." >> $LOG
+    echo "$USUARIO existe. Lo eliminamos... Pero antes eliminamos todo el entorno: INSTANCIAS, REDES, ROUTERS, etc... U know..." >> $LOG
 
 FECHA=$(date +"%d%b%y") 
 
 source /home/sistemas/usuarios/$USUARIO'rc'
+# source /home/usuarios/admin_openrc 
 
-for %DELETE_INSTANCE_ID in $(openstack server list | grep 'ACTIVE\|SHUTOFF\|ERROR'  |awk {'print $2'})
+for DELETE_INSTANCE_ID in $(openstack server list | grep 'ACTIVE\|SHUTOFF\|ERROR'  |awk {'print $2'})
 do
 openstack server delete $DELETE_INSTANCE_ID
 echo_time "Instancia $DELETE_INSTANCE_ID Eliminada "  >> $LOG
 done
 
-for %DELETE_ROUTER_ID in $(openstack router list | grep 'ACTIVE\|SHUTOFF\|ERROR' | awk {'print $2'})
+for DELETE_ROUTER_ID in $(openstack router list | grep 'ACTIVE\|SHUTOFF\|ERROR' | awk {'print $2'})
 do
 openstack router delete $DELETE_ROUTER_ID
 echo_time "Router $DELETE_ROUTER_ID Eliminado " >> $LOG
 done
 
-for %DELETE_NETWORK_ID in $(openstack network list | grep '[1234567890]' | awk {'print $2'})
+for DELETE_NETWORK_ID in $(openstack network list | grep '[1234567890]' | awk {'print $2'})
 do
 openstack network delete $DELETE_NETWORK_ID
 echo_time "Red $DELETE_NETWORK_ID Eliminada "  >> $LOG
 done
 
-#for %DELETE_PORT_ID in $(openstack port list | grep 'ACTIVE\|BUILD\|DOWN' | awk {'print $2'})
-#do
-#openstack router port delete $DELETE_ROUTER_ID
-#echo_time "Router Port $DELETE_ROUTER_ID Eliminado " >> $LOG
-#done
+source /home/sistemas/admin_openrc
 
-source /home/usuarios/admin_openrc
-
-openstack project delete $USUARIO'_proyecto'
-echo_time "Proyecto Elimiando "  >> $LOG
+openstack project delete $USUARIO
+echo_time "Proyecto Eliminado "  >> $LOG
 openstack user delete $USUARIO
-echo_time "Usuario Elimiando "  >> $LOG
+echo_time "Usuario Eliminado "  >> $LOG
 openstack role delete $USUARIO
 echo_time "Rol Eliminado "  >> $LOG
 echo_time " Usuario: "$USUARIO" BORRADO" >> $LOG
@@ -171,12 +166,12 @@ if [ $SALTAR = 0 ];
   then 
 
   # Comprobamos que no existe ya el usuario
-  openstack user list | awk '{print $4}' > lista_usuarios.txt
-  grep -q $USUARIO '/home/sistemas/lista_usuarios.txt' && echo " " && echo "Usuario: "$USUARIO" YA EXISTE !!!" && echo " " && echo "CAMBIA DE USUARIO...!" && echo " " && rm /root/lista_usuarios.txt && exit 0
+  openstack user list | awk '{print $4}' > /home/sistemas/lista_usuarios.txt
+  grep -q $USUARIO '/home/sistemas/lista_usuarios.txt' && echo " " && echo "Usuario: "$USUARIO" YA EXISTE !!!" && echo " " && echo "CAMBIA DE USUARIO...!" && echo " " && rm /home/sistemas/lista_usuarios.txt && exit 0
 echo -ne '( #                                        )  (06 %)\r'
   # Comprobamos que no existe ya el proyecto
-  openstack project list | awk '{print $4}' > lista_proyectos.txt
-  grep -q $PROYECTO '/home/sistemas/lista_proyectos.txt' && echo " " && echo "Proyecto: "$PROYECTO" YA EXISTE !!!" && echo " " && echo "CAMBIA DE NOMBRE DE PROYECTO...!" && echo " " && rm /root/lista_proyectos.txt && exit 0
+  openstack project list | awk '{print $4}' > /home/sistemas/lista_proyectos.txt
+  grep -q $PROYECTO '/home/sistemas/lista_proyectos.txt' && echo " " && echo "Proyecto: "$PROYECTO" YA EXISTE !!!" && echo " " && echo "CAMBIA DE NOMBRE DE PROYECTO...!" && echo " " && rm /home/sistemas/lista_proyectos.txt && exit 0
 echo -ne '( ##                                       )  (07 %)\r'
   # Creamos Proyecto
   openstack project create --description $PROYECTO $PROYECTO &> /dev/null
@@ -277,8 +272,8 @@ echo -ne '( #####                                    )  (30 %)\r'
   openstack security group rule list $SECGROUP_ID | awk '{print $2}' | sed -e '1,3d' | head -n -1 > rules.txt
   while read ruleid; do
     openstack security group rule delete $ruleid
-  done < /root/rules.txt
-  # rm /root/rules.txt
+  done < /home/sistemas/rules.txt
+  # rm /home/sistemas/rules.txt
 echo -ne '( ######                                   )  (34 %)\r'
   # Creamos las 2 reglas básicas de entrada 22 y 3389
   openstack security group rule create --proto tcp --dst-port 3389 --src-ip 0.0.0.0/0 $SECGROUP_ID &> /dev/null
@@ -286,8 +281,8 @@ echo -ne '( ######                                   )  (34 %)\r'
   openstack security group rule create --proto tcp --dst-port 22 --src-ip 0.0.0.0/0 $SECGROUP_ID &> /dev/null
   echo_time "          Entrante: 22 (SSH)" >> $LOG
 echo -ne '( #########                                )  (38 %)\r'
-  # rm /root/lista_usuarios.txt
-  # rm /root/lista_proyectos.txt
+  # rm /home/sistemas/lista_usuarios.txt
+  # rm /home/sistemas/lista_proyectos.txt
 
 else
   # Al poner el parámetro -w saltamos aqui y sacamos todos los datos referentes a este usuario.
@@ -357,9 +352,6 @@ echo -ne '( ###############                          )  (48 %)\r'
     echo_time "Máquina : " $INSTANCIA ", CREADA...!" >> $LOG
     echo_time " " >> $LOG
 
-# -------
-
-echo -ne '( #########################                )  (50 %)\r'
     sleep 2
 echo -ne '( ###########################              )  (52 %)\r'
     #
@@ -369,16 +361,16 @@ echo -ne '( ###########################              )  (52 %)\r'
 
     # ROUTER_IFACE=$(ip netns exec $QROUTER ip a |grep qg- | awk '{print $2}' | sed 's/.$//')
     ROUTER_IFACE=$(ip netns exec $QROUTER ip a |grep qg- | grep -v "scope global" | awk '{print $2}' | sed 's/.$//')
-echo -ne '( #########################                )  (53 %)\r'
+echo -ne '( ############################             )  (58 %)\r'
     #
     #-------
     #  Sacamos la IP de la máquina virtual recien creada 
     #-------
 
-    #source /root/openrc
+    #source /home/sistemas/admin_openrc
     VMIP=$(openstack server show $INSTANCE_ID | grep RED_$USUARIO | awk {'print $4'} | sed 's/^.*=//')
     LAST_OCTET=$(echo $ROUTER_IP | cut -d"." -f4)
-echo -ne '( ###########################              )  (54 %)\r'
+echo -ne '( ################################         )  (64 %)\r'
     #
     #--------
     #  Ejecutamos las reglas en los routers
@@ -405,30 +397,30 @@ echo -ne '( ###########################              )  (54 %)\r'
     echo_time " " >> $LOG
     echo_time " " >> $LOG
     echo_time "====================================" >> $LOG
-echo -ne '( ##############################           )  (58 %)\r'
+echo -ne '( ###################################      )  (75 %)\r'
     sleep 20
-echo -ne '( ###############################          )  (60 %)\r'
+echo -ne '( ######################################## )  (95 %)\r'
 
     echo_time " " >> $LOG
     echo_time " Reglas Iptables creadas en el Router " >> $LOG
     echo_time "--------------------------------------" >> $LOG
-
+echo -ne '(                OK                        )  (100 %)\r'
 #
 # CREAMOS MAQUINA UBUNTU
 # ======================
 
   elif [ $SISTEMA == "Ubuntu" ] || [ $SISTEMA == "ubuntu" ];
   then
-    source /root/openrc
+    source /home/sistemas/admin_openrc
     SISTEMA_ID=$(openstack image list | grep "Ubuntu_16" | awk '{print $2}')
     echo_time "Generando Sistema: Ubuntu Server 16.04 x64" >> $LOG
 
-    source /root/usuarios/$USUARIO'rc'
-    nova keypair-add $USUARIO'_ubuntu_key' >> /root/usuarios/$USUARIO'_ubuntu_key_'$FECHA'.pem'
-    chmod 600 /root/usuarios/$USUARIO'_ubuntu_key_'$FECHA'.pem'
-    openstack server create --flavor $TIPOID --image $SISTEMA_ID --key-name $USUARIO'_ubuntu_key' $INSTANCIA &> /dev/null
+    source /home/sistemas/usuarios/$USUARIO'rc'
+    nova keypair-add $USUARIO'_ubuntu_key' >> /home/sistemas/usuarios/$USUARIO'_ubuntu_key_'$FECHA'.pem'
+    chmod 600 /home/sistemas/usuarios/$USUARIO'_ubuntu_key_'$FECHA'.pem'
+    openstack server create --flavor $FLAVOR_ID --image $IMAGE_ID --nic net-id=$NET_ID --security-group default --key-name $USUARIO'_ubuntu_key' $INSTANCIA &> /dev/null
 
-    INSTANCE_ID=$(nova list | grep $INSTANCIA | awk '{print $2}')
+    INSTANCE_ID=$(openstack server list | grep $INSTANCIA | awk '{print $2}')
     echo_time "Máquina " $INSTANCIA " creada..!" >> $LOG
     echo_time " " >> $LOG
 
@@ -439,8 +431,8 @@ echo -ne '( ###############################          )  (60 %)\r'
     ROUTER_IFACE=$(ip netns exec $QROUTER ip a |grep qg- | grep -v "scope global" | awk '{print $2}' | sed 's/.$//')
 
 #  Sacamos la IP de la máquina virtual recien creada
-    source /root/openrc
-    VMIP=$(nova show $INSTANCE_ID | grep RED_$USUARIO | awk '{print $5}')
+    #source /home/sistemas/admin_openrc
+    VMIP=$(openstack server show $INSTANCE_ID | grep RED_$USUARIO | awk {'print $4'} | sed 's/^.*=//')
     LAST_OCTET=$(echo $ROUTER_IP | cut -d"." -f4)
 
 echo_time "===================================" >> $LOG
@@ -468,8 +460,8 @@ echo_time "====================================" >> $LOG
 
 #Creamos las reglas para permitir al puerto 22
 
-ssh node-1 "ip netns exec $QROUTER iptables -t nat -I PREROUTING -i $ROUTER_IFACE -p tcp --dport 22 -j DNAT --to-destination $VM_IP" &> /dev/null  
-ssh node-2 "ip netns exec $QROUTER iptables -t nat -I PREROUTING -i $ROUTER_IFACE -p tcp --dport 22 -j DNAT --to-destination $VM_IP" &> /dev/null
+#ssh node-1 "ip netns exec $QROUTER iptables -t nat -I PREROUTING -i $ROUTER_IFACE -p tcp --dport 22 -j DNAT --to-destination $VM_IP" &> /dev/null  
+#ssh node-2 "ip netns exec $QROUTER iptables -t nat -I PREROUTING -i $ROUTER_IFACE -p tcp --dport 22 -j DNAT --to-destination $VM_IP" &> /dev/null
 
 echo_time " " >> $LOG
 echo_time " Reglas Iptables creadas en el Router " >> $LOG
@@ -482,13 +474,13 @@ echo_time " " >> $LOG
 
   elif [ $SISTEMA == "Centos" ] || [ $SISTEMA == "Centos" ];
   then
-    source /root/openrc
+    source /home/sistemas/admin_openrc
     SISTEMA_ID=$(openstack image list | grep "CentOS_7" | awk '{print $2}')
     echo_time "Generando Sistema: Ubuntu Server 16.04 x64" >> $LOG
     # TIPOID=$(openstack flavor list | grep $TIPO | awk '{print $2}')
-    source /root/usuarios/$USUARIO'rc'
-    nova keypair-add $USUARIO'_centos_key' >> /root/usuarios/$USUARIO'_centos_key_'$FECHA'.pem'
-    chmod 600 /root/usuarios/$USUARIO'_centos_key_'$FECHA'.pem'
+    source /home/sistemas/usuarios/$USUARIO'rc'
+    nova keypair-add $USUARIO'_centos_key' >> /home/sistemas/usuarios/$USUARIO'_centos_key_'$FECHA'.pem'
+    chmod 600 /home/sistemas/usuarios/$USUARIO'_centos_key_'$FECHA'.pem'
     openstack server create --flavor $TIPOID --image $SISTEMA_ID --key-name $USUARIO'_centos_key' $INSTANCIA &> /dev/null
     INSTANCE_ID=$(nova list | grep $INSTANCIA | awk '{print $2}')
     echo_time "Máquina " $INSTANCIA " creada..!" >> $LOG
@@ -501,7 +493,7 @@ echo_time " " >> $LOG
     ROUTER_IFACE=$(ip netns exec $QROUTER ip a |grep qg- | grep -v "scope global" | awk '{print $2}' | sed 's/.$//')
 
 #  Sacamos la IP de la máquina virtual recien creada
-    source /root/openrc
+    source /home/sistemas/admin_openrc
     VMIP=$(nova show $INSTANCE_ID | grep RED_$USUARIO | awk '{print $5}')
     LAST_OCTET=$(echo $ROUTER_IP | cut -d"." -f4)
 
@@ -555,7 +547,5 @@ echo_time " " >> $LOG
 echo_time " " >> $LOG
 echo_time " " >> $LOG
 
-rm /root/lista_usuarios.txt  &> /dev/null
-rm /root/lista_proyectos.txt  &> /dev/null
-
-
+rm /home/sistemas/lista_usuarios.txt  &> /dev/null
+rm /home/sistemas/lista_proyectos.txt  &> /dev/null
