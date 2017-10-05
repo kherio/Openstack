@@ -41,25 +41,25 @@ FECHA=$(date +"%d%b%y")
 
 source /home/sistemas/usuarios/$USUARIO_openrc
 
-for %DELETE_INSTANCE_ID in (openstack server list | grep 'ACTIVE\|SHUTOFF\|ERROR'  |awk {'print $2'})
+for %DELETE_INSTANCE_ID in $(openstack server list | grep 'ACTIVE\|SHUTOFF\|ERROR'  |awk {'print $2'})
 do
 openstack server delete $DELETE_INSTANCE_ID
 echo_time "Instancia $DELETE_INSTANCE_ID Eliminada "  >> $LOG
 done
 
-for %DELETE_NETWORK_ID in (openstack network list | grep '[1234567890]' | awk {'print $2'})
+for %DELETE_NETWORK_ID in $(openstack network list | grep '[1234567890]' | awk {'print $2'})
 do
 openstack network delete $DELETE_NETWORK_ID
 echo_time "Red $DELETE_NETWORK_ID Eliminada "  >> $LOG
 done
 
-for %DELETE_PORT_ID in (openstack port list | grep 'ACTIVE\|BUILD\|DOWN' | awk {'print $2'})
+for %DELETE_PORT_ID in $(openstack port list | grep 'ACTIVE\|BUILD\|DOWN' | awk {'print $2'})
 do
 openstack router port delete $DELETE_ROUTER_ID
 echo_time "Router Port $DELETE_ROUTER_ID Eliminado " >> $LOG
 done
 
-for %DELETE_ROUTER_ID in (openstack router list | grep 'ACTIVE\|SHUTOFF\|ERROR' | awk {'print $2'})
+for %DELETE_ROUTER_ID in $(openstack router list | grep 'ACTIVE\|SHUTOFF\|ERROR' | awk {'print $2'})
 do
 openstack router delete $DELETE_ROUTER_ID
 echo_time "Router $DELETE_ROUTER_ID Eliminado " >> $LOG
